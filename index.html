@@ -1,55 +1,97 @@
-<!DOCTYPE html><html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pelacak Lokasi</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      padding: 2rem;
-    }
-    .hidden { display: none; }
-  </style>
-</head>
-<body>
-  <h2>Halo! Izinkan lokasi kamu ya</h2>
-  <p>Klik "Izinkan" saat diminta untuk memberikan lokasi kamu.</p>  <div id="status"></div>  <script>
-    function sendToWhatsApp(latitude, longitude, timestamp) {
-      const lokasiLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-      const waktu = new Date(timestamp).toLocaleString('id-ID');
-      const pesan = `Hai! Lokasi telah didapatkan!%0A%0ALokasi: ${lokasiLink}%0AWaktu: ${waktu}`;
-      const whatsappURL = `https://api.whatsapp.com/send?phone=6283802358171&text=${pesan}`;
-      window.location.href = whatsappURL;
-    }
+<!DOCTYPE html><html lang="id">  <head>  
+  <meta charset="UTF-8">  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+  <title>Pelacak Lokasi via IP</title>  
+  <style>  
+    body {  
+      font-family: sans-serif;  
+      text-align: center;  
+      padding: 2rem;  
+      background-color: #f4f4f4;  
+    }  
+    .box {  
+      background: white;  
+      padding: 1.5rem;  
+      border-radius: 1rem;  
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);  
+      max-width: 500px;  
+      margin: 2rem auto;  
+    }  
+    #log {  
+      text-align: left;  
+      margin-top: 2rem;  
+      font-size: 0.9rem;  
+    }  
+    .log-item {  
+      background: #fff;  
+      padding: 1rem;  
+      margin-bottom: 1rem;  
+      border-radius: 0.5rem;  
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);  
+    }  
+  </style>  
+</head>  
+<body>  
+  <h2>Menentukan Lokasi Berdasarkan IP</h2>  
+  <div class="box" id="info">  
+    <p>Memuat data lokasi kamu...</p>  
+  </div>  <div id="log">  
+    <h3>Log Akses</h3>  
+    <div id="log-container"></div>  
+  </div>  <script>  
+    function tampilkanLog() {  
+      const logs = JSON.parse(localStorage.getItem('ipLogs') || '[]');  
+      const logContainer = document.getElementById('log-container');  
+      logContainer.innerHTML = '';  logs.reverse().forEach(log => {  
+    const div = document.createElement('div');  
+    div.className = 'log-item';  
+    div.innerHTML = `  
+      <strong>Waktu:</strong> ${log.time}<br>  
+      <strong>IP:</strong> ${log.ip}<br>  
+      <strong>Lokasi:</strong> ${log.city}, ${log.region}, ${log.country}<br>  
+      <strong>Koordinat:</strong> ${log.lat}, ${log.lon}<br>  
+    `;  
+    logContainer.appendChild(div);  
+  });  
+}  
 
-    function getLocation() {
-      const status = document.getElementById('status');
-      if (!navigator.geolocation) {
-        status.innerText = 'Geolocation tidak didukung browser ini.';
-        return;
-      }
+async function getIPLocation() {  
+  const res = await fetch('https://ipapi.co/json/');  
+  const data = await res.json();  
+  const waktu = new Date().toLocaleString('id-ID');  
 
-      status.innerText = 'Mengambil lokasi...';
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          const timestamp = position.timestamp;
+  const infoBox = document.getElementById('info');  
+  infoBox.innerHTML = `  
+    <p><strong>IP:</strong> ${data.ip}</p>  
+    <p><strong>Kota:</strong> ${data.city}</p>  
+    <p><strong>Provinsi:</strong> ${data.region}</p>  
+    <p><strong>Negara:</strong> ${data.country_name}</p>  
+    <p><strong>Koordinat:</strong> ${data.latitude}, ${data.longitude}</p>  
+    <p><strong>Waktu Akses:</strong> ${waktu}</p>  
+    <p><a href="https://www.google.com/maps?q=${data.latitude},${data.longitude}" target="_blank">Lihat di Google Maps</a></p>  
+  `;  
 
-          // Simpan data ke LocalStorage (jika ingin disimpan di sisi klien)
-          const data = { latitude, longitude, timestamp };
-          localStorage.setItem('lokasiData', JSON.stringify(data));
+  // Simpan log ke localStorage  
+  const log = {  
+    ip: data.ip,  
+    city: data.city,  
+    region: data.region,  
+    country: data.country_name,  
+    lat: data.latitude,  
+    lon: data.longitude,  
+    time: waktu  
+  };  
 
-          status.innerText = 'Lokasi berhasil didapatkan! Mengirim ke WhatsApp...';
-          sendToWhatsApp(latitude, longitude, timestamp);
-        },
-        (error) => {
-          status.innerText = 'Gagal mengambil lokasi: ' + error.message;
-        }
-      );
-    }
+  const logs = JSON.parse(localStorage.getItem('ipLogs') || '[]');  
+  logs.push(log);  
+  localStorage.setItem('ipLogs', JSON.stringify(logs));  
 
-    // Jalankan saat halaman dibuka
-    window.onload = getLocation;
-  </script></body>
-</html>
+  tampilkanLog();  
+}  
+
+getIPLocation();  
+tampilkanLog();
+
+</script></body>
+
+  </html>
